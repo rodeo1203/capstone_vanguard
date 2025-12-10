@@ -1,5 +1,5 @@
-##This is a relative performance based implementation that reads various monthly regime models
-##then it takes the regime wise outperformance to over/under allocate assets
+##This is a naive implementation that reads various monthly regime models
+##This then take the static regime wise outperformance to over/under allocate assets
 
 import pandas as pd
 import numpy as np
@@ -14,13 +14,13 @@ warnings.filterwarnings("ignore")
 
 def load_regime_data(regimename):
     if regimename=="kmeans":
-        Regime_clusters=pd.read_csv("data/kmeans_regimes_k5.csv")
+        Regime_clusters=pd.read_csv("kmeans_regimes_k5.csv")
     elif regimename=="gmm":
-        Regime_clusters_test=pd.read_csv("data/BGMM_Regime_Test.csv")
-        Regime_clusters_train=pd.read_csv("data/BGMM_Regime_Train.csv")
+        Regime_clusters_test=pd.read_csv("BGMM_Regime_Test.csv")
+        Regime_clusters_train=pd.read_csv("BGMM_Regime_Train.csv")
         Regime_clusters = pd.concat([Regime_clusters_test, Regime_clusters_train])
     else:
-        Regime_clusters=pd.read_csv("data/1_HMM_regime.csv")
+        Regime_clusters=pd.read_csv("1_HMM_regime.csv")
 
     Regime_clusters.columns=["Date", "Regime"]
     Regime_clusters["Date"]=pd.to_datetime(Regime_clusters["Date"]).dt.to_period("M")
@@ -336,16 +336,50 @@ def analyze_and_plot_performance(finaldf, regime_name, lookfwd, output_folder="A
     })
 
     # === Save table as image ===
-    fig, ax = plt.subplots(figsize=(6, 2))
+    fig, ax = plt.subplots(figsize=(5, 2.5))  # Reduced width from 7 to 5
+    ax.axis('tight')
     ax.axis('off')
+
+    # Create table
     table = ax.table(
         cellText=excesssummary.values,
         colLabels=excesssummary.columns,
         cellLoc='center',
-        loc='center'
+        loc='center',
+        colWidths=[0.55, 0.35]  # Slightly adjusted proportions
     )
 
-    table.scale(1, 2)
+    # Style the table
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)  # Reduced from 11 to 10
+    table.scale(1, 2.2)  # Reduced from 2.5 to 2.2
+
+    # Color header row
+    for i in range(2):
+        cell = table[(0, i)]
+        cell.set_facecolor('#4472C4')
+        cell.set_text_props(weight='bold', color='white')
+
+    # Alternate row colors
+    for i in range(1, len(excesssummary) + 1):
+        for j in range(2):
+            cell = table[(i, j)]
+            if i % 2 == 0:
+                cell.set_facecolor('#F2F2F2')
+            else:
+                cell.set_facecolor('#E7E6E6')
+            
+            # Bold the metric names (first column)
+            if j == 0:
+                cell.set_text_props(weight='bold')
+            # Bold and color the values (second column)
+            else:
+                cell.set_text_props(weight='bold', color='#2E5C8A')
+
+    # Add title
+    ax.set_title("Excess Performance Summary", 
+                fontsize=12, fontweight='bold', pad=15)  # Reduced font and padding
+
     plt.tight_layout()
     plot_path = os.path.join(output_folder, f"{file_prefix}_excessperf.png")
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
@@ -660,15 +694,15 @@ def plot_weights_over_time(finaldf, regime_name, lookfwd, output_folder="Adarsh/
 
 ## Input data
 if __name__=="__main__":
-    russell2000=pd.read_csv("Russel2000data.csv")
+    russell2000=pd.read_csv("data/Russel2000data.csv")
     russell2000['Russell 2000'] = (russell2000['RTY Index'] - russell2000['RTY Index'].shift(-1)) / russell2000['RTY Index'].shift(-1)
     russell2000["Date"]=pd.to_datetime(russell2000["Date"]).dt.to_period("M")
-    monthly_ret= pd.read_csv("df_1M_ret.csv")
+    monthly_ret= pd.read_csv("data/df_1M_ret.csv")
     monthly_ret["Date"]=pd.to_datetime(monthly_ret["Date"]).dt.to_period("M")
     monthly_ret= monthly_ret.merge(russell2000, on="Date", how="left")
 
     regimeslist=["kmeans", "gmm", "hmm"]
-    lookfwds=[6,12]
+    lookfwds=[6]
 
     # BASE (strategic neutral) weights
     base = pd.Series({
@@ -757,7 +791,7 @@ if __name__=="__main__":
                 monthly_weights_df = pd.DataFrame(monthly_weights_list)
                 
                 # Merge with actual returns
-                finaldf = dfpost2020.merge(monthly_weights_df, on=["Date", "Regime"], how="inner")
+                finaldf = dfpost2020.merge(monthly_weights_df, on=["Date", "Regime"], how="left")
                 
                 # Calculate portfolio returns
                 # Tactical: use lagged weights (weights determined in previous month)
