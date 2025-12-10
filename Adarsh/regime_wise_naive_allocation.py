@@ -14,13 +14,13 @@ warnings.filterwarnings("ignore")
 
 def load_regime_data(regimename):
     if regimename=="kmeans":
-        Regime_clusters=pd.read_csv("kmeans_regimes_k5.csv")
+        Regime_clusters=pd.read_csv("data/kmeans_regimes_k5.csv")
     elif regimename=="gmm":
-        Regime_clusters_test=pd.read_csv("BGMM_Regime_Test.csv")
-        Regime_clusters_train=pd.read_csv("BGMM_Regime_Train.csv")
+        Regime_clusters_test=pd.read_csv("data/BGMM_Regime_Test.csv")
+        Regime_clusters_train=pd.read_csv("data/BGMM_Regime_Train.csv")
         Regime_clusters = pd.concat([Regime_clusters_test, Regime_clusters_train])
     else:
-        Regime_clusters=pd.read_csv("1_HMM_regime.csv")
+        Regime_clusters=pd.read_csv("data/1_HMM_regime.csv")
 
     Regime_clusters.columns=["Date", "Regime"]
     Regime_clusters["Date"]=pd.to_datetime(Regime_clusters["Date"]).dt.to_period("M")
