@@ -1,5 +1,5 @@
-##This is a naive implementation that reads various monthly regime models
-##This then take the static regime wise outperformance to over/under allocate assets
+##This is a relative performance based implementation that reads various monthly regime models
+##then it takes the regime wise outperformance to over/under allocate assets
 
 import pandas as pd
 import numpy as np
